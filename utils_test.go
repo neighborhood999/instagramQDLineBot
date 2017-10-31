@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/line/line-bot-sdk-go/linebot"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,6 +15,13 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(json))
+}
+
+func callbackHandlerWithHTML(w http.ResponseWriter, r *http.Request) {
+	html, _ := ioutil.ReadFile("test.html")
+	w.Header().Set("Content-Type", "application/html")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(html))
 }
 
 func TestMakeRequest(t *testing.T) {
@@ -26,18 +34,19 @@ func TestMakeRequest(t *testing.T) {
 }
 
 func TestValidateURL(t *testing.T) {
+	p := ParsePage{}
 	expectedHostOne := "https://www.instagram.com/"
 	expectedHostTwo := "https://instagram.com"
 	expectedResponseMessage := "⚠️ 請點選 Instagram 照片 [⋯] 圖示並複製網址！"
 	expectedUnexpectedURLResponse := "😣 請不要輸入 Instagram 以外的網址！"
 
-	urlOne, _ := validateURL(expectedHostOne)
-	assert.Equal(t, expectedHostOne, urlOne)
-	urlTwo, _ := validateURL(expectedHostTwo)
-	assert.Equal(t, expectedHostTwo, urlTwo)
-	_, errResponseMessage := validateURL("Hello LineBot")
+	p.validateURL(expectedHostOne)
+	assert.Equal(t, expectedHostOne, p.PhotoURL)
+	p.validateURL(expectedHostTwo)
+	assert.Equal(t, expectedHostTwo, p.PhotoURL)
+	errResponseMessage := p.validateURL("Hello LineBot")
 	assert.EqualError(t, errResponseMessage, expectedResponseMessage)
-	_, errUnexpectedURLResponse := validateURL("https://www.google.com.tw")
+	errUnexpectedURLResponse := p.validateURL("https://www.google.com.tw")
 	assert.EqualError(t, errUnexpectedURLResponse, expectedUnexpectedURLResponse)
 }
 
@@ -50,4 +59,71 @@ func TestFetchInstagramAPI(t *testing.T) {
 	i.fetchInstagramAPI(p)
 
 	assert.EqualValues(t, 20, len(i.Items))
+}
+
+func TestParsePageContent(t *testing.T) {
+	p := &ParsePage{}
+	mockLineBotTextMessage := linebot.NewTextMessage("Hello World")
+
+	expectedValidateURLMessage := "⚠️ 請點選 Instagram 照片 [⋯] 圖示並複製網址！"
+	expectedUsername := "unsplash"
+	expectedURLHash := "Ba0ExjJhvtX"
+
+	err := p.parsePageContent(mockLineBotTextMessage)
+	assert.EqualError(t, err, expectedValidateURLMessage)
+
+	ts := httptest.NewServer(http.HandlerFunc(callbackHandlerWithHTML))
+	defer ts.Close()
+
+	p.parsePageContent(linebot.NewTextMessage(ts.URL + "/p/Ba0ExjJhvtX/"))
+	assert.Equal(t, expectedUsername, p.Username)
+	assert.Equal(t, expectedURLHash, p.URLHash)
+}
+
+func TestFilterImages(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(callbackHandler))
+	defer ts.Close()
+
+	i := &InstagramPhotos{}
+	p := &ParsePage{
+		Username: "unsplash",
+		PhotoURL: ts.URL + "/p/Ba0ExjJhvtX/",
+		URLHash:  "Ba0ExjJhvtX",
+	}
+
+	i.fetchInstagramAPI(p)
+	p.filterImages(*i)
+	assert.Equal(t, "Ba0ExjJhvtX", p.URLHash)
+	assert.Equal(t, 1, len(p.Images))
+
+	// Test multiple photos and check `p.Images` will clear
+	p.PhotoURL = ts.URL + "/p/Baydi6BB99r"
+	p.URLHash = "Baydi6BB99r"
+	p.filterImages(*i)
+	assert.Equal(t, "Baydi6BB99r", p.URLHash)
+	assert.Equal(t, 10, len(p.Images))
+}
+
+func TestFetchMultiplePhotos(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(callbackHandler))
+	defer ts.Close()
+
+	i := &InstagramPhotos{}
+	p := &ParsePage{
+		Username: "unsplash",
+		PhotoURL: ts.URL + "/p/Ba0ExjJhvtX/",
+		URLHash:  "Ba0ExjJhvtX",
+	}
+
+	i.fetchInstagramAPI(p)
+	p.filterImages(*i)
+	p.fetchMultiplePhotos()
+	assert.Equal(t, 1, len(p.BotMessage))
+
+	// Test multiple photos and check `p.BotMessage` will clear
+	p.PhotoURL = ts.URL + "/p/Baydi6BB99r"
+	p.URLHash = "Baydi6BB99r"
+	p.filterImages(*i)
+	p.fetchMultiplePhotos()
+	assert.Equal(t, 10, len(p.BotMessage))
 }
