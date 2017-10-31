@@ -51,8 +51,7 @@ func (i *InstagramPhotos) fetchInstagramAPI(p *ParsePage) {
 }
 
 func (p *ParsePage) parsePageContent(text *linebot.TextMessage) error {
-	err := p.validateURL(text.Text)
-	if err != nil {
+	if err := p.validateURL(text.Text); err != nil {
 		return err
 	}
 
@@ -62,7 +61,7 @@ func (p *ParsePage) parsePageContent(text *linebot.TextMessage) error {
 	p.Body = splitHTML
 	p.URLHash = splitURL[4]
 
-	for i := 0; i < len(splitHTML); i++ {
+	for i := range splitHTML {
 		if strings.Contains(splitHTML[i], "username") {
 			p.Username = splitHTML[i+2]
 		}
@@ -95,7 +94,7 @@ func (p *ParsePage) filterImages(instagramPhotos InstagramPhotos) {
 
 func (p *ParsePage) fetchMultiplePhotos() {
 	p.BotMessage = p.BotMessage[:0]
-	for i := 0; i < len(p.Images); i++ {
+	for i := range p.Images {
 		p.BotMessage = append(
 			p.BotMessage,
 			linebot.NewImageMessage(p.Images[i], p.Images[i]),
