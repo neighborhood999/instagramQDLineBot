@@ -3,6 +3,7 @@ package main
 // ParsePage represent parse instagram page and store parse result
 type ParsePage struct {
 	Username string
+	PhotoURL string
 	URLHash  string
 	Body     []string
 	Images   []string

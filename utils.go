@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"log"
@@ -36,4 +37,9 @@ func validateURL(text string) (string, error) {
 
 	errMessage := errors.New("😣 請不要輸入 Instagram 以外的網址！")
 	return "", errMessage
+}
+
+func (i *InstagramPhotos) fetchInstagramAPI(p *ParsePage) {
+	body := makeRequest(p.PhotoURL)
+	json.Unmarshal(body, &i)
 }
