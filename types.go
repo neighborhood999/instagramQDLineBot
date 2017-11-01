@@ -2,8 +2,8 @@ package main
 
 import "github.com/line/line-bot-sdk-go/linebot"
 
-// ParsePage represent parse instagram page and store parse result
-type ParsePage struct {
+// InstagramPage represent parse instagram page and store parse result
+type InstagramPage struct {
 	Username   string
 	PhotoURL   string
 	URLHash    string

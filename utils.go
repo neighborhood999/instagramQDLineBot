@@ -27,7 +27,7 @@ func makeRequest(url string) []byte {
 	return body
 }
 
-func (p *ParsePage) validateURL(text string) error {
+func (p *InstagramPage) validateURL(text string) error {
 	url, err := url.ParseRequestURI(text)
 	if err != nil {
 		errMessage := errors.New("⚠️ 請點選 Instagram 照片 [⋯] 圖示並複製網址！")
@@ -45,12 +45,12 @@ func (p *ParsePage) validateURL(text string) error {
 	return errMessage
 }
 
-func (i *InstagramPhotos) fetchInstagramAPI(p *ParsePage) {
+func (i *InstagramPhotos) fetchInstagramAPI(p *InstagramPage) {
 	body := makeRequest(p.PhotoURL)
 	json.Unmarshal(body, &i)
 }
 
-func (p *ParsePage) parsePageContent(text *linebot.TextMessage) error {
+func (p *InstagramPage) instagramPageContent(text *linebot.TextMessage) error {
 	if err := p.validateURL(text.Text); err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (p *ParsePage) parsePageContent(text *linebot.TextMessage) error {
 	return nil
 }
 
-func (p *ParsePage) filterImages(instagramPhotos InstagramPhotos) {
+func (p *InstagramPage) filterImages(instagramPhotos InstagramPhotos) {
 	p.Images = p.Images[:0]
 
 	for _, item := range instagramPhotos.Items {
@@ -92,7 +92,7 @@ func (p *ParsePage) filterImages(instagramPhotos InstagramPhotos) {
 	}
 }
 
-func (p *ParsePage) fetchMultiplePhotos() {
+func (p *InstagramPage) fetchMultiplePhotos() {
 	p.BotMessage = p.BotMessage[:0]
 	for i := range p.Images {
 		p.BotMessage = append(

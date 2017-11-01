@@ -10,14 +10,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func callbackHandler(w http.ResponseWriter, r *http.Request) {
+func testCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	json, _ := ioutil.ReadFile("media.json")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(json))
 }
 
-func callbackHandlerWithHTML(w http.ResponseWriter, r *http.Request) {
+func testCallbackHandlerWithHTML(w http.ResponseWriter, r *http.Request) {
 	html, _ := ioutil.ReadFile("testHTML")
 	w.Header().Set("Content-Type", "application/html")
 	w.WriteHeader(http.StatusOK)
@@ -26,7 +26,7 @@ func callbackHandlerWithHTML(w http.ResponseWriter, r *http.Request) {
 
 func TestMakeRequest(t *testing.T) {
 	expectedResponse, _ := ioutil.ReadFile("media.json")
-	ts := httptest.NewServer(http.HandlerFunc(callbackHandler))
+	ts := httptest.NewServer(http.HandlerFunc(testCallbackHandler))
 	defer ts.Close()
 
 	body := makeRequest(ts.URL)
@@ -34,7 +34,7 @@ func TestMakeRequest(t *testing.T) {
 }
 
 func TestValidateURL(t *testing.T) {
-	p := ParsePage{}
+	p := InstagramPage{}
 	expectedHostOne := "https://www.instagram.com/"
 	expectedHostTwo := "https://instagram.com"
 	expectedResponseMessage := "⚠️ 請點選 Instagram 照片 [⋯] 圖示並複製網址！"
@@ -51,41 +51,41 @@ func TestValidateURL(t *testing.T) {
 }
 
 func TestFetchInstagramAPI(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(callbackHandler))
+	ts := httptest.NewServer(http.HandlerFunc(testCallbackHandler))
 	defer ts.Close()
 
-	p := &ParsePage{PhotoURL: ts.URL}
+	p := &InstagramPage{PhotoURL: ts.URL}
 	i := &InstagramPhotos{}
 	i.fetchInstagramAPI(p)
 
 	assert.EqualValues(t, 20, len(i.Items))
 }
 
-func TestParsePageContent(t *testing.T) {
-	p := &ParsePage{}
+func TestInstagramPageContent(t *testing.T) {
+	p := &InstagramPage{}
 	mockLineBotTextMessage := linebot.NewTextMessage("Hello World")
 
 	expectedValidateURLMessage := "⚠️ 請點選 Instagram 照片 [⋯] 圖示並複製網址！"
 	expectedUsername := "unsplash"
 	expectedURLHash := "Ba0ExjJhvtX"
 
-	err := p.parsePageContent(mockLineBotTextMessage)
+	err := p.instagramPageContent(mockLineBotTextMessage)
 	assert.EqualError(t, err, expectedValidateURLMessage)
 
-	ts := httptest.NewServer(http.HandlerFunc(callbackHandlerWithHTML))
+	ts := httptest.NewServer(http.HandlerFunc(testCallbackHandlerWithHTML))
 	defer ts.Close()
 
-	p.parsePageContent(linebot.NewTextMessage(ts.URL + "/p/Ba0ExjJhvtX/"))
+	p.instagramPageContent(linebot.NewTextMessage(ts.URL + "/p/Ba0ExjJhvtX/"))
 	assert.Equal(t, expectedUsername, p.Username)
 	assert.Equal(t, expectedURLHash, p.URLHash)
 }
 
 func TestFilterImages(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(callbackHandler))
+	ts := httptest.NewServer(http.HandlerFunc(testCallbackHandler))
 	defer ts.Close()
 
 	i := &InstagramPhotos{}
-	p := &ParsePage{
+	p := &InstagramPage{
 		Username: "unsplash",
 		PhotoURL: ts.URL + "/p/Ba0ExjJhvtX/",
 		URLHash:  "Ba0ExjJhvtX",
@@ -105,11 +105,11 @@ func TestFilterImages(t *testing.T) {
 }
 
 func TestFetchMultiplePhotos(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(callbackHandler))
+	ts := httptest.NewServer(http.HandlerFunc(testCallbackHandler))
 	defer ts.Close()
 
 	i := &InstagramPhotos{}
-	p := &ParsePage{
+	p := &InstagramPage{
 		Username: "unsplash",
 		PhotoURL: ts.URL + "/p/Ba0ExjJhvtX/",
 		URLHash:  "Ba0ExjJhvtX",
