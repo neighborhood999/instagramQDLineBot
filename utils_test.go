@@ -54,10 +54,13 @@ func TestFetchInstagramAPI(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(testCallbackHandler))
 	defer ts.Close()
 
-	p := &InstagramPage{PhotoURL: ts.URL}
 	i := &InstagramPhotos{}
-	i.fetchInstagramAPI(p)
+	p := &InstagramPage{
+		Username: "unsplash",
+		APIURL:   ts.URL + "/unsplash/media",
+	}
 
+	i.fetchInstagramAPI(p)
 	assert.EqualValues(t, 20, len(i.Items))
 }
 
@@ -78,6 +81,8 @@ func TestInstagramPageContent(t *testing.T) {
 	p.instagramPageContent(linebot.NewTextMessage(ts.URL + "/p/Ba0ExjJhvtX/"))
 	assert.Equal(t, expectedUsername, p.Username)
 	assert.Equal(t, expectedURLHash, p.URLHash)
+	assert.Equal(t, instagramHost+"unsplash/media", p.APIURL)
+	assert.NotEmpty(t, p.Body)
 }
 
 func TestFilterImages(t *testing.T) {
@@ -87,6 +92,7 @@ func TestFilterImages(t *testing.T) {
 	i := &InstagramPhotos{}
 	p := &InstagramPage{
 		Username: "unsplash",
+		APIURL:   ts.URL + "/unsplash/media",
 		PhotoURL: ts.URL + "/p/Ba0ExjJhvtX/",
 		URLHash:  "Ba0ExjJhvtX",
 	}
@@ -111,6 +117,7 @@ func TestFetchMultiplePhotos(t *testing.T) {
 	i := &InstagramPhotos{}
 	p := &InstagramPage{
 		Username: "unsplash",
+		APIURL:   ts.URL + "/unsplash/media",
 		PhotoURL: ts.URL + "/p/Ba0ExjJhvtX/",
 		URLHash:  "Ba0ExjJhvtX",
 	}

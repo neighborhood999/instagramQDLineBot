@@ -6,6 +6,7 @@ import "github.com/line/line-bot-sdk-go/linebot"
 type InstagramPage struct {
 	Username   string
 	PhotoURL   string
+	APIURL     string
 	URLHash    string
 	Body       []string
 	Images     []string

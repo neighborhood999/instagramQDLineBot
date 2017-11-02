@@ -12,6 +12,8 @@ import (
 	"github.com/line/line-bot-sdk-go/linebot"
 )
 
+const instagramHost = "https://www.instagram.com/"
+
 func makeRequest(url string) []byte {
 	response, err := http.Get(url)
 	if err != nil {
@@ -25,6 +27,11 @@ func makeRequest(url string) []byte {
 	}
 
 	return body
+}
+
+func (i *InstagramPhotos) fetchInstagramAPI(p *InstagramPage) {
+	body := makeRequest(p.APIURL)
+	json.Unmarshal(body, &i)
 }
 
 func (p *InstagramPage) validateURL(text string) error {
@@ -45,11 +52,6 @@ func (p *InstagramPage) validateURL(text string) error {
 	return errMessage
 }
 
-func (i *InstagramPhotos) fetchInstagramAPI(p *InstagramPage) {
-	body := makeRequest(p.PhotoURL)
-	json.Unmarshal(body, &i)
-}
-
 func (p *InstagramPage) instagramPageContent(text *linebot.TextMessage) error {
 	if err := p.validateURL(text.Text); err != nil {
 		return err
@@ -66,6 +68,8 @@ func (p *InstagramPage) instagramPageContent(text *linebot.TextMessage) error {
 			p.Username = splitHTML[i+2]
 		}
 	}
+
+	p.APIURL = instagramHost + p.Username + "/media"
 
 	return nil
 }
