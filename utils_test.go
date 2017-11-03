@@ -11,21 +11,21 @@ import (
 )
 
 func testCallbackHandler(w http.ResponseWriter, r *http.Request) {
-	json, _ := ioutil.ReadFile("media.json")
+	json, _ := ioutil.ReadFile("tests/media.json")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(json))
 }
 
 func testCallbackHandlerWithHTML(w http.ResponseWriter, r *http.Request) {
-	html, _ := ioutil.ReadFile("testHTML")
+	html, _ := ioutil.ReadFile("tests/testHTML")
 	w.Header().Set("Content-Type", "application/html")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(html))
 }
 
 func TestMakeRequest(t *testing.T) {
-	expectedResponse, _ := ioutil.ReadFile("media.json")
+	expectedResponse, _ := ioutil.ReadFile("tests/media.json")
 	ts := httptest.NewServer(http.HandlerFunc(testCallbackHandler))
 	defer ts.Close()
 

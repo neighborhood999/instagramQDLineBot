@@ -63,9 +63,10 @@ func (p *InstagramPage) instagramPageContent(text *linebot.TextMessage) error {
 	p.Body = splitHTML
 	p.URLHash = splitURL[4]
 
-	for i := range splitHTML {
-		if strings.Contains(splitHTML[i], "username") {
-			p.Username = splitHTML[i+2]
+	for _, t := range strings.Fields(p.Body[103]) {
+		if strings.HasPrefix(t, "(@") {
+			userName := strings.TrimRight(strings.TrimLeft(t, "(@"), ")")
+			p.Username = userName
 		}
 	}
 
