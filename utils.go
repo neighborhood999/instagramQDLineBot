@@ -35,9 +35,11 @@ func (i *InstagramPhotos) fetchInstagramAPI(p *InstagramPage) {
 }
 
 func (p *InstagramPage) validateURL(text string) error {
+	var errMessage error
+
 	url, err := url.ParseRequestURI(text)
 	if err != nil {
-		errMessage := errors.New("⚠️ 請點選 Instagram 照片 [⋯] 圖示並複製網址！")
+		errMessage = errors.New("⚠️ 請點選 Instagram 照片 [⋯] 圖示並複製網址！")
 		return errMessage
 	}
 
@@ -47,8 +49,8 @@ func (p *InstagramPage) validateURL(text string) error {
 		p.PhotoURL = url.String()
 		return nil
 	}
+	errMessage = errors.New("😣 請不要輸入 Instagram 以外的網址！")
 
-	errMessage := errors.New("😣 請不要輸入 Instagram 以外的網址！")
 	return errMessage
 }
 
