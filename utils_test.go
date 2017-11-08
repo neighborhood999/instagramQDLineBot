@@ -50,27 +50,10 @@ func TestValidateURL(t *testing.T) {
 	assert.EqualError(t, errUnexpectedURLResponse, expectedUnexpectedURLResponse)
 }
 
-func TestFetchInstagramAPI(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(testCallbackHandler))
-	defer ts.Close()
-
-	i := &InstagramPhotos{}
-	p := &InstagramPage{
-		Username: "unsplash",
-		APIURL:   ts.URL + "/unsplash/media",
-	}
-
-	i.fetchInstagramAPI(p)
-	assert.EqualValues(t, 20, len(i.Items))
-}
-
 func TestInstagramPageContent(t *testing.T) {
 	p := &InstagramPage{}
 	mockLineBotTextMessage := linebot.NewTextMessage("Hello World")
-
 	expectedValidateURLMessage := "⚠️ 請點選 Instagram 照片 [⋯] 圖示並複製網址！"
-	expectedUsername := "unsplash"
-	expectedURLHash := "Ba0ExjJhvtX"
 
 	err := p.instagramPageContent(mockLineBotTextMessage)
 	assert.EqualError(t, err, expectedValidateURLMessage)
@@ -79,58 +62,5 @@ func TestInstagramPageContent(t *testing.T) {
 	defer ts.Close()
 
 	p.instagramPageContent(linebot.NewTextMessage(ts.URL + "/p/Ba0ExjJhvtX/"))
-	assert.Equal(t, expectedUsername, p.Username)
-	assert.Equal(t, expectedURLHash, p.URLHash)
-	assert.Equal(t, instagramHost+"unsplash/media", p.APIURL)
 	assert.NotEmpty(t, p.Body)
-}
-
-func TestFilterImages(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(testCallbackHandler))
-	defer ts.Close()
-
-	i := &InstagramPhotos{}
-	p := &InstagramPage{
-		Username: "unsplash",
-		APIURL:   ts.URL + "/unsplash/media",
-		PhotoURL: ts.URL + "/p/Ba0ExjJhvtX/",
-		URLHash:  "Ba0ExjJhvtX",
-	}
-
-	i.fetchInstagramAPI(p)
-	p.filterImages(*i)
-	assert.Equal(t, "Ba0ExjJhvtX", p.URLHash)
-	assert.Equal(t, 1, len(p.Images))
-
-	// Test multiple photos and check `p.Images` will clear
-	p.PhotoURL = ts.URL + "/p/Baydi6BB99r"
-	p.URLHash = "Baydi6BB99r"
-	p.filterImages(*i)
-	assert.Equal(t, "Baydi6BB99r", p.URLHash)
-	assert.Equal(t, 10, len(p.Images))
-}
-
-func TestFetchMultiplePhotos(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(testCallbackHandler))
-	defer ts.Close()
-
-	i := &InstagramPhotos{}
-	p := &InstagramPage{
-		Username: "unsplash",
-		APIURL:   ts.URL + "/unsplash/media",
-		PhotoURL: ts.URL + "/p/Ba0ExjJhvtX/",
-		URLHash:  "Ba0ExjJhvtX",
-	}
-
-	i.fetchInstagramAPI(p)
-	p.filterImages(*i)
-	p.fetchMultiplePhotos()
-	assert.Equal(t, 1, len(p.BotMessage))
-
-	// Test multiple photos and check `p.BotMessage` will clear
-	p.PhotoURL = ts.URL + "/p/Baydi6BB99r"
-	p.URLHash = "Baydi6BB99r"
-	p.filterImages(*i)
-	p.fetchMultiplePhotos()
-	assert.Equal(t, 10, len(p.BotMessage))
 }

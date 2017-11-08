@@ -10,10 +10,8 @@ import (
 )
 
 var (
-	bot             *linebot.Client
-	instagramPage   InstagramPage
-	instagramPhotos InstagramPhotos
-	imageMessages   []linebot.Message
+	bot           *linebot.Client
+	instagramPage InstagramPage
 )
 
 func callbackHandler(w http.ResponseWriter, r *http.Request) {
@@ -44,27 +42,11 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				instagramPhotos.fetchInstagramAPI(&instagramPage)
-				instagramPage.filterImages(instagramPhotos)
-				instagramPage.fetchMultiplePhotos()
-
-				botMessageLength := len(instagramPage.BotMessage)
-				log.Println("botMessageLength:", botMessageLength)
-
-				if botMessageLength < 5 {
-					if _, err := bot.ReplyMessage(event.ReplyToken, instagramPage.BotMessage[:botMessageLength]...).Do(); err != nil {
-						log.Print(err)
-					}
-				} else {
-					splitBotMessageMaxSend := instagramPage.BotMessage[:5]
-					lastBotMessage := instagramPage.BotMessage[5:]
-
-					if _, err := bot.ReplyMessage(event.ReplyToken, splitBotMessageMaxSend...).Do(); err != nil {
-						log.Println(err)
-					}
-					if _, err := bot.PushMessage(event.Source.UserID, lastBotMessage...).Do(); err != nil {
-						log.Println(err)
-					}
+				if _, err := bot.ReplyMessage(
+					event.ReplyToken,
+					linebot.NewImageMessage(instagramPage.PhotoURL, instagramPage.PhotoURL),
+				).Do(); err != nil {
+					log.Println(err)
 				}
 			}
 		}

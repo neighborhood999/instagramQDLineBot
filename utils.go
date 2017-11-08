@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"log"
@@ -11,8 +10,6 @@ import (
 
 	"github.com/line/line-bot-sdk-go/linebot"
 )
-
-const instagramHost = "https://www.instagram.com/"
 
 func makeRequest(url string) []byte {
 	response, err := http.Get(url)
@@ -27,11 +24,6 @@ func makeRequest(url string) []byte {
 	}
 
 	return body
-}
-
-func (i *InstagramPhotos) fetchInstagramAPI(p *InstagramPage) {
-	body := makeRequest(p.APIURL)
-	json.Unmarshal(body, &i)
 }
 
 func (p *InstagramPage) validateURL(text string) error {
@@ -61,50 +53,13 @@ func (p *InstagramPage) instagramPageContent(text *linebot.TextMessage) error {
 
 	body := makeRequest(p.PhotoURL)
 	splitHTML := strings.Split(string(body), "\"")
-	splitURL := strings.Split(p.PhotoURL, "/")
 	p.Body = splitHTML
-	p.URLHash = splitURL[4]
 
-	for _, t := range strings.Fields(p.Body[103]) {
-		if strings.HasPrefix(t, "(@") {
-			userName := strings.TrimRight(strings.TrimLeft(t, "(@"), ")")
-			p.Username = userName
+	for i := range splitHTML {
+		if strings.Contains(splitHTML[i], "og:image") {
+			p.PhotoURL = splitHTML[i+2]
 		}
 	}
-
-	p.APIURL = instagramHost + p.Username + "/media"
 
 	return nil
-}
-
-func (p *InstagramPage) filterImages(instagramPhotos InstagramPhotos) {
-	p.Images = p.Images[:0]
-
-	for _, item := range instagramPhotos.Items {
-		if item.Code == p.URLHash {
-			if len(item.CarouselMedia) > 0 {
-				for photoIndex := range item.CarouselMedia {
-					p.Images = append(
-						p.Images,
-						item.CarouselMedia[photoIndex].Images.StandardResolution.URL,
-					)
-				}
-			} else {
-				p.Images = append(
-					p.Images,
-					item.Images.StandardResolution.URL,
-				)
-			}
-		}
-	}
-}
-
-func (p *InstagramPage) fetchMultiplePhotos() {
-	p.BotMessage = p.BotMessage[:0]
-	for i := range p.Images {
-		p.BotMessage = append(
-			p.BotMessage,
-			linebot.NewImageMessage(p.Images[i], p.Images[i]),
-		)
-	}
 }
